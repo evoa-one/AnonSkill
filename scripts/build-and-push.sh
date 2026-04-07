@@ -18,17 +18,18 @@ if [ "$ENV" = "dev" ]; then
   API_URL="https://anon-skill-dev-backend-xxxx-uc.a.run.app"
   echo "NOTE: Update API_URL in this script after first terraform apply for dev."
 else
-  API_URL="https://anon-skill-api.evoa.one"
+  API_URL="https://api-anon-skill.evoa.one"
 fi
 
 # Backend
 echo "Building backend..."
-docker build -t ${REGISTRY}/backend:latest ./backend
+docker build --platform linux/amd64 -t ${REGISTRY}/backend:latest ./backend
 docker push ${REGISTRY}/backend:latest
 
 # Frontend
 echo "Building frontend..."
 docker build \
+  --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_API_URL=${API_URL} \
   -t ${REGISTRY}/frontend:latest \
   ./frontend
@@ -37,6 +38,4 @@ docker push ${REGISTRY}/frontend:latest
 echo ""
 echo "Done! Images pushed to $REGISTRY"
 echo ""
-echo "To deploy, run:"
-echo "  gcloud run services update anon-skill-${ENV}-backend  --image ${REGISTRY}/backend:latest  --region ${REGION}"
-echo "  gcloud run services update anon-skill-${ENV}-frontend --image ${REGISTRY}/frontend:latest --region ${REGION}"
+echo "Next: cd infra/envs/${ENV} && terraform apply"
