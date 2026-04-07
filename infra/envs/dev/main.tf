@@ -28,6 +28,9 @@ module "anon_skill" {
   # For dev, we use the raw .run.app URLs directly (or map them in Cloudflare).
   backend_url  = var.backend_url
   frontend_url = var.frontend_url
+
+  auth0_client_secret = var.auth0_client_secret
+  gemini_api_key      = var.gemini_api_key
 }
 
 output "backend_cloud_run_url" {

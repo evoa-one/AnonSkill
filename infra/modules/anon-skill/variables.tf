@@ -38,3 +38,21 @@ variable "frontend_url" {
   description = "Public URL for the frontend"
   type        = string
 }
+
+variable "auth0_client_secret" {
+  description = "Auth0 client secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "gemini_api_key" {
+  description = "Gemini API key"
+  type        = string
+  sensitive   = true
+}
+
+variable "github_connection_name" {
+  description = "Auth0 social connection name for GitHub (Auth0 Dashboard → Authentication → Social → GitHub → Name)"
+  type        = string
+  default     = "github"
+}

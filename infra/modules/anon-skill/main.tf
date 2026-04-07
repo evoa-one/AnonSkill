@@ -9,6 +9,23 @@ resource "google_artifact_registry_repository" "main" {
   location      = var.region
   repository_id = "anon-skill-${var.env}"
   format        = "DOCKER"
+
+  cleanup_policies {
+    id     = "keep-latest"
+    action = "KEEP"
+    condition {
+      tag_state    = "TAGGED"
+      tag_prefixes = ["latest"]
+    }
+  }
+
+  cleanup_policies {
+    id     = "delete-untagged"
+    action = "DELETE"
+    condition {
+      tag_state = "UNTAGGED"
+    }
+  }
 }
 
 # ── Cloud Run: Backend ────────────────────────────────────────────────────────
@@ -76,7 +93,7 @@ resource "google_cloud_run_v2_service" "backend" {
       }
       env {
         name  = "github_connection_name"
-        value = "github"
+        value = var.github_connection_name
       }
     }
 
@@ -143,11 +160,21 @@ resource "google_secret_manager_secret" "auth0_client_secret" {
   }
 }
 
+resource "google_secret_manager_secret_version" "auth0_client_secret" {
+  secret      = google_secret_manager_secret.auth0_client_secret.id
+  secret_data = var.auth0_client_secret
+}
+
 resource "google_secret_manager_secret" "gemini_api_key" {
   secret_id = "${local.name_prefix}-gemini-api-key"
   replication {
     auto {}
   }
+}
+
+resource "google_secret_manager_secret_version" "gemini_api_key" {
+  secret      = google_secret_manager_secret.gemini_api_key.id
+  secret_data = var.gemini_api_key
 }
 
 data "google_compute_default_service_account" "default" {}

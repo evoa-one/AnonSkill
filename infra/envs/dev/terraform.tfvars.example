@@ -3,6 +3,8 @@ region          = "us-central1"
 auth0_domain    = "dev-wxx3eh84toxjfdqq.us.auth0.com"
 auth0_audience  = "https://anon-skill-dev.evoa.one/api"
 auth0_client_id = "your-auth0-client-id"
+auth0_client_secret = "your-auth0-client-secret"
+gemini_api_key      = "your-gemini-api-key"
 
 # Step 1: Set these to placeholder values for first apply, then get real URLs from outputs.
 # Step 2: Re-run terraform apply with the actual Cloud Run URLs (or your Cloudflare custom domains).
