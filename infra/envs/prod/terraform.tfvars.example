@@ -1,0 +1,10 @@
+project_id      = "your-gcp-project-id"
+region          = "us-central1"
+auth0_domain    = "dev-wxx3eh84toxjfdqq.us.auth0.com"
+auth0_audience  = "https://anon-skill-api.evoa.one/api"
+auth0_client_id = "your-auth0-client-id"
+
+# Step 1: Set these to placeholder values for first apply, then get real URLs from outputs.
+# Step 2: Re-run terraform apply with Cloudflare custom domains (e.g. anon-skill-api.evoa.one).
+backend_url  = "https://anon-skill-api.evoa.one"
+frontend_url = "https://anon-skill.evoa.one"
