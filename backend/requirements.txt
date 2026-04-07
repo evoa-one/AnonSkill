@@ -1,0 +1,23 @@
+# Web framework
+fastapi==0.111.1
+uvicorn[standard]==0.30.1
+
+# HTTP client (async-capable, used for Auth0 API calls)
+httpx==0.27.0
+
+# JWT validation against Auth0 JWKS
+python-jose[cryptography]==3.3.0
+cryptography==42.0.8
+
+# Configuration / env management
+pydantic==2.10.6
+pydantic-settings==2.7.1
+
+# GitHub REST API client
+PyGithub==2.3.0
+
+# Required by python-jose RSA support
+rsa==4.9
+
+# Gemini API (AI verification report generation)
+google-generativeai==0.7.2
