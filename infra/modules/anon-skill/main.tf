@@ -28,6 +28,26 @@ resource "google_artifact_registry_repository" "main" {
   }
 }
 
+# ── Dedicated Service Account ─────────────────────────────────────────────────
+
+resource "google_service_account" "backend" {
+  account_id   = "${local.name_prefix}-backend"
+  display_name = "AnonSkill ${var.env} Backend"
+}
+
+# Grant only Secret Manager access
+resource "google_secret_manager_secret_iam_member" "backend_auth0_secret" {
+  secret_id = google_secret_manager_secret.auth0_client_secret.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.backend.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "backend_gemini_secret" {
+  secret_id = google_secret_manager_secret.gemini_api_key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.backend.email}"
+}
+
 # ── Cloud Run: Backend ────────────────────────────────────────────────────────
 
 resource "google_cloud_run_v2_service" "backend" {
@@ -35,6 +55,8 @@ resource "google_cloud_run_v2_service" "backend" {
   location = var.region
 
   template {
+    service_account = google_service_account.backend.email
+
     containers {
       image = "${local.registry}/backend:latest"
 
@@ -205,18 +227,4 @@ resource "google_secret_manager_secret" "gemini_api_key" {
 resource "google_secret_manager_secret_version" "gemini_api_key" {
   secret      = google_secret_manager_secret.gemini_api_key.id
   secret_data = var.gemini_api_key
-}
-
-data "google_compute_default_service_account" "default" {}
-
-resource "google_secret_manager_secret_iam_member" "backend_auth0_secret" {
-  secret_id = google_secret_manager_secret.auth0_client_secret.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${data.google_compute_default_service_account.default.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "backend_gemini_secret" {
-  secret_id = google_secret_manager_secret.gemini_api_key.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${data.google_compute_default_service_account.default.email}"
 }
