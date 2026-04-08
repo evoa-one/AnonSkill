@@ -187,7 +187,7 @@ def _collect_repo_metrics(repo: Repository) -> RepoMetrics:
     return metrics
 
 
-def _fetch_top_repos_sync(github_token: str) -> tuple[str, list[RepoMetrics]]:
+def _fetch_top_repos_sync(github_token: str, excluded_repo_names: set[str] | None = None) -> tuple[str, list[RepoMetrics]]:
     """
     Synchronous worker: fetches repos, ranks them, and returns the top N.
 
@@ -204,14 +204,18 @@ def _fetch_top_repos_sync(github_token: str) -> tuple[str, list[RepoMetrics]]:
         seen: set[int] = set()
         candidates: list[Repository] = []
 
+        excluded_names = excluded_repo_names or set()
+
         def _add_repo(repo: Repository) -> None:
-            if repo.id in seen or repo.fork:
+            if repo.id in seen or repo.fork or repo.name in excluded_names:
                 return
             seen.add(repo.id)
             candidates.append(repo)
 
         for repo in user.get_repos(type="owner", sort="pushed"):
             _add_repo(repo)
+            if len(candidates) >= CANDIDATE_LIMIT:
+                break
 
         for org in user.get_orgs():
             try:
@@ -530,12 +534,10 @@ async def generate_verification_report(
     excluded_repo_names = excluded_repos or set()
 
     # ── Phase 1: Fetch and rank repos (blocking I/O → run in thread) ──────────
+    # Excluded repos are filtered before ranking so the next best repo fills the gap.
     github_username, top_metrics = await asyncio.to_thread(
-        _fetch_top_repos_sync, github_token
+        _fetch_top_repos_sync, github_token, excluded_repo_names
     )
-
-    # Filter out user-excluded repos before ranking
-    top_metrics = [m for m in top_metrics if m.name not in excluded_repo_names]
 
     if not top_metrics:
         raise ValueError(
