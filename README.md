@@ -52,6 +52,7 @@ Browser                  Backend (FastAPI)              Auth0                  G
 | AI Analysis | Google Gemini 2.0 Flash |
 | GitHub API | PyGithub |
 | JWT Validation | python-jose (RS256 + JWKS) |
+| Infrastructure | GCP Cloud Run + Terraform |
 
 ---
 
@@ -84,10 +85,12 @@ Token Vault storage requires a separate **Connected Account** flow via Auth0's M
 
 ```
 .
-├── frontend/          # Next.js App Router  →  see frontend/README.md
-├── backend/           # FastAPI             →  see backend/README.md
-├── docker-compose.yml # Production deployment
-├── nginx.conf         # Reverse proxy config
+├── backend/           # FastAPI app        → see backend/README.md
+├── frontend/          # Next.js app        → see frontend/README.md
+├── infra/             # Terraform (GCP)    → see infra/README.md
+├── scripts/           # Build & deploy scripts
+├── docker-compose.yml # Local development
+├── nginx.conf         # Local reverse proxy (optional)
 └── README.md
 ```
 
@@ -99,7 +102,7 @@ Token Vault storage requires a separate **Connected Account** flow via Auth0's M
 
 - Node.js 20+
 - Python 3.13+
-- Auth0 account with Token Vault configured (see backend/README.md)
+- Auth0 account with Token Vault configured
 - Google AI Studio API key (Gemini)
 - GitHub App registered in Auth0
 
@@ -114,6 +117,7 @@ uvicorn app.main:app --reload --port 8000
 
 # Frontend (separate terminal)
 cd frontend
+cp .env.example .env.local
 npm install
 npm run dev
 ```
@@ -121,10 +125,24 @@ npm run dev
 Frontend: http://localhost:3000  
 Backend docs: http://localhost:8000/docs
 
-### Production (Docker)
+### Local Development (Docker)
 
 ```bash
-docker compose up -d --build
+cp backend/.env.example backend/.env  # fill in all values
+docker compose up --build
 ```
 
-See `nginx.conf` for reverse proxy setup.
+Frontend: http://localhost:3000  
+Backend: http://localhost:8000
+
+### Production (GCP Cloud Run)
+
+See [infra/README.md](infra/README.md) for full deployment instructions.
+
+```bash
+# 1. Provision infrastructure
+cd infra/envs/prod && terraform init && terraform apply
+
+# 2. Build, push, and deploy
+./scripts/build-and-push.sh prod
+```
