@@ -31,6 +31,10 @@ module "anon_skill" {
 
   auth0_client_secret = var.auth0_client_secret
   gemini_api_key      = var.gemini_api_key
+
+  custom_domain_enabled  = var.custom_domain_enabled
+  backend_custom_domain  = var.backend_custom_domain
+  frontend_custom_domain = var.frontend_custom_domain
 }
 
 output "backend_cloud_run_url" {

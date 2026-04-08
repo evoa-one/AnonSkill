@@ -45,3 +45,21 @@ variable "gemini_api_key" {
   type        = string
   sensitive   = true
 }
+
+variable "custom_domain_enabled" {
+  description = "Enable Cloud Run custom domain mappings"
+  type        = bool
+  default     = false
+}
+
+variable "backend_custom_domain" {
+  description = "Custom domain for backend"
+  type        = string
+  default     = ""
+}
+
+variable "frontend_custom_domain" {
+  description = "Custom domain for frontend"
+  type        = string
+  default     = ""
+}
