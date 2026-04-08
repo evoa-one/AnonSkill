@@ -120,7 +120,7 @@ async def analyze_skills(
             detail="GitHub API call failed. The token may have been revoked.",
         ) from exc
     finally:
-        github_token = ""  # noqa: S105
+        github_token = ""  # noqa: S105  # removes local reference; GC handles memory
 
     logger.info(
         "Skill report done for %s: %d repos, %d skills.",
@@ -186,7 +186,7 @@ async def verify_skills(
             detail="An unexpected error occurred during verification.",
         ) from exc
     finally:
-        github_token = ""  # noqa: S105
+        github_token = ""  # noqa: S105  # removes local reference; GC handles memory
 
     logger.info(
         "Verification report done for %s: skill=%s  score=%d  confidence=%s",
