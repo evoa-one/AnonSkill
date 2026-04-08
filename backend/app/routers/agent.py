@@ -30,9 +30,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.middleware.jwt_validator import AuthContext, get_auth_context
 from app.models.schemas import SkillReport, VerificationReport, VerifyRequest
+from app.services import token_store
 from app.services.agent_analyzer import generate_verification_report, get_repo_list
 from app.services.github_client import build_skill_report
-from app.services import token_store
 from app.services.token_vault import get_github_token_from_vault
 
 logger = logging.getLogger(__name__)
@@ -118,9 +118,7 @@ async def analyze_skills(
     github_token = await _resolve_github_token(auth)
 
     try:
-        report = await build_skill_report(
-            github_token=github_token, max_repos=max_repos
-        )
+        report = await build_skill_report(github_token=github_token, max_repos=max_repos)
     except Exception as exc:
         logger.error("GitHub analysis failed for user %s: %s", auth.user_id, exc)
         raise HTTPException(

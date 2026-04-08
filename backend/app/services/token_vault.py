@@ -43,13 +43,9 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 # Token Exchange grant type identifier defined by Auth0 for AI Agents
-_TOKEN_EXCHANGE_GRANT = (
-    "urn:auth0:params:oauth:grant-type:token-exchange:federated-connection-access-token"
-)
+_TOKEN_EXCHANGE_GRANT = "urn:auth0:params:oauth:grant-type:token-exchange:federated-connection-access-token"
 _SUBJECT_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:refresh_token"
-_REQUESTED_TOKEN_TYPE = (
-    "http://auth0.com/oauth/token-type/federated-connection-access-token"
-)
+_REQUESTED_TOKEN_TYPE = "http://auth0.com/oauth/token-type/federated-connection-access-token"
 
 
 async def get_github_token_from_vault(user_access_token: str) -> str:
@@ -115,11 +111,9 @@ async def get_github_token_from_vault(user_access_token: str) -> str:
         "federated_connection_refresh_token_not_found",
     ):
         raise ValueError(
-            "GitHub token not found in Token Vault. "
-            "The user needs to complete the GitHub Connected Account flow."
+            "GitHub token not found in Token Vault. The user needs to complete the GitHub Connected Account flow."
         )
 
     raise RuntimeError(
-        f"Auth0 Token Vault returned an unexpected error: "
-        f"{response.status_code} — {error_code}: {error_desc}"
+        f"Auth0 Token Vault returned an unexpected error: {response.status_code} — {error_code}: {error_desc}"
     )

@@ -127,11 +127,7 @@ def _derive_skills(repos: list[RepoSummary]) -> tuple[list[str], list[str], list
     # Derive architecture patterns from topic tags
     all_topics = {tag.lower() for repo in repos for tag in repo.topic_tags}
     architecture_patterns = list(
-        {
-            pattern
-            for topic_key, pattern in _TOPIC_ARCHITECTURE_MAP.items()
-            if topic_key in all_topics
-        }
+        {pattern for topic_key, pattern in _TOPIC_ARCHITECTURE_MAP.items() if topic_key in all_topics}
     )
 
     return detected_skills, top_languages, architecture_patterns
@@ -182,13 +178,9 @@ async def build_skill_report(github_token: str, max_repos: int = 30) -> SkillRep
                 repo_summaries.append(summary)
             except GithubException as exc:
                 # A single inaccessible repo should not abort the whole analysis
-                logger.warning(
-                    "Skipping repo %s due to GitHub error: %s", repo.name, exc
-                )
+                logger.warning("Skipping repo %s due to GitHub error: %s", repo.name, exc)
 
-        detected_skills, top_languages, architecture_patterns = _derive_skills(
-            repo_summaries
-        )
+        detected_skills, top_languages, architecture_patterns = _derive_skills(repo_summaries)
 
         return SkillReport(
             github_username=github_username,
@@ -205,9 +197,7 @@ async def build_skill_report(github_token: str, max_repos: int = 30) -> SkillRep
         client.close()
 
 
-async def fetch_repo_languages_raw(
-    github_token: str, repo_full_name: str
-) -> dict[str, int]:
+async def fetch_repo_languages_raw(github_token: str, repo_full_name: str) -> dict[str, int]:
     """
     Fetch the language breakdown for a single repository using httpx.
 

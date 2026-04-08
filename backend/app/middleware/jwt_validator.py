@@ -17,12 +17,12 @@ import time
 from dataclasses import dataclass
 
 import httpx
-from app.constants import JWKS_TTL
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from app.config import settings
+from app.constants import JWKS_TTL
 
 
 @dataclass(frozen=True)

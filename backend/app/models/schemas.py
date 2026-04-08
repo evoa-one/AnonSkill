@@ -5,9 +5,7 @@ Zero-knowledge rule: no schema ever exposes raw source code,
 file content, or personally identifiable information from GitHub.
 """
 
-from typing import Optional
 from pydantic import BaseModel, Field, field_validator
-
 
 # ── OAuth ─────────────────────────────────────────────────────────────────────
 
@@ -15,12 +13,8 @@ from pydantic import BaseModel, Field, field_validator
 class AuthorizeResponse(BaseModel):
     """Returned by GET /oauth/github/authorize – tells the caller where to redirect."""
 
-    authorization_url: str = Field(
-        ..., description="Full Auth0 authorization URL to redirect the user to"
-    )
-    state: str = Field(
-        ..., description="CSRF-prevention state token; must be validated on callback"
-    )
+    authorization_url: str = Field(..., description="Full Auth0 authorization URL to redirect the user to")
+    state: str = Field(..., description="CSRF-prevention state token; must be validated on callback")
 
 
 class CallbackRequest(BaseModel):
@@ -37,7 +31,7 @@ class TokenResponse(BaseModel):
     token_type: str = "Bearer"
     expires_in: int
     # Refresh token is optional – Auth0 only issues one when offline_access scope is requested
-    refresh_token: Optional[str] = None
+    refresh_token: str | None = None
 
 
 # ── Agent / Analysis ──────────────────────────────────────────────────────────
@@ -50,7 +44,7 @@ class RepoSummary(BaseModel):
     """
 
     name: str
-    primary_language: Optional[str]
+    primary_language: str | None
     languages: dict[str, int] = Field(
         default_factory=dict,
         description="Map of language → bytes of code (from GitHub Linguist)",
@@ -154,10 +148,7 @@ class VerificationReport(BaseModel):
         # Normalize common Gemini variants: "mid level", "mid-level", "midlevel"
         normalized = v.strip().title().replace(" ", "-")
         for option in allowed:
-            if (
-                option.lower() == v.strip().lower()
-                or option.lower() == normalized.lower()
-            ):
+            if option.lower() == v.strip().lower() or option.lower() == normalized.lower():
                 return option
         # Fallback: return closest match rather than raising
         v_lower = v.strip().lower()

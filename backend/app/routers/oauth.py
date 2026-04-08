@@ -33,8 +33,8 @@ After this flow, GET /agent/vault/status returns {connected: true} and
 agent endpoints can use Token Vault to retrieve the GitHub token.
 """
 
-import hashlib
 import base64
+import hashlib
 import logging
 import secrets
 import urllib.parse
@@ -127,13 +127,9 @@ def initiate_github_oauth() -> AuthorizeResponse:
     ),
 )
 async def oauth_callback(
-    code: str | None = Query(
-        None, description="One-time authorization code from Auth0"
-    ),
+    code: str | None = Query(None, description="One-time authorization code from Auth0"),
     state: str | None = Query(None, description="State token echoed back by Auth0"),
-    error: str | None = Query(
-        None, description="Set by Auth0 if the user denied access"
-    ),
+    error: str | None = Query(None, description="Set by Auth0 if the user denied access"),
     error_description: str | None = Query(None),
 ) -> RedirectResponse:
     """
@@ -147,20 +143,15 @@ async def oauth_callback(
     """
     # ── Guard: Auth0 returned an error (e.g. user denied, client not authorized) ─
     if error or not code:
-        logger.warning(
-            "Auth0 returned an error on callback: %s – %s", error, error_description
-        )
+        logger.warning("Auth0 returned an error on callback: %s – %s", error, error_description)
         redirect_url = (
-            f"{settings.frontend_url}/auth/error"
-            f"?error={error or 'missing_code'}&description={error_description or ''}"
+            f"{settings.frontend_url}/auth/error?error={error or 'missing_code'}&description={error_description or ''}"
         )
         return RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
 
     # ── Guard: validate CSRF state token ─────────────────────────────────────
     if not state or state not in _pending_states:
-        logger.error(
-            "Unknown or replayed state token received on callback: %s", state[:8]
-        )
+        logger.error("Unknown or replayed state token received on callback: %s", state[:8])
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid state token. Possible CSRF attempt.",
@@ -201,11 +192,7 @@ async def initiate_github_connect(
 
     # PKCE
     code_verifier = secrets.token_urlsafe(64)
-    code_challenge = (
-        base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest())
-        .rstrip(b"=")
-        .decode()
-    )
+    code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).rstrip(b"=").decode()
 
     state = secrets.token_urlsafe(32)
     connect_callback = f"{settings.connect_callback_url}"
@@ -272,9 +259,7 @@ async def complete_github_connect(
     state: str = Query(...),
 ) -> RedirectResponse:
     if state not in _pending_connect_states:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid state."
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid state.")
 
     connect_state = _pending_connect_states.pop(state)
     user_sub = connect_state["user_sub"]
@@ -384,9 +369,7 @@ async def _exchange_code_for_tokens(code: str) -> TokenResponse:
 
     data = response.json()
     id_token = data.get("id_token") or data.get("access_token")
-    refresh_token = data.get(
-        "refresh_token"
-    )  # Auth0 refresh token — subject_token for Token Vault
+    refresh_token = data.get("refresh_token")  # Auth0 refresh token — subject_token for Token Vault
 
     # Store the Auth0 refresh token server-side for the Token Vault refresh-token exchange.
     # Requires a GitHub App (not OAuth App) — GitHub Apps issue refresh tokens.
@@ -398,6 +381,7 @@ async def _exchange_code_for_tokens(code: str) -> TokenResponse:
     )
     if refresh_token:
         from jose import jwt as _jwt
+
         from app.services import token_store
 
         try:
@@ -407,9 +391,7 @@ async def _exchange_code_for_tokens(code: str) -> TokenResponse:
             if sub:
                 token_store.save(sub, refresh_token)
         except Exception:
-            logger.warning(
-                "Could not extract sub from id_token to store refresh token."
-            )
+            logger.warning("Could not extract sub from id_token to store refresh token.")
 
     return TokenResponse(
         access_token=id_token,

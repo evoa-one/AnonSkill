@@ -28,7 +28,7 @@ import json
 import logging
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import google.generativeai as genai
 from github import Github, GithubException
@@ -244,9 +244,7 @@ def _fetch_top_repos_sync(
             except GithubException:
                 continue
 
-        candidates = sorted(
-            candidates, key=lambda r: r.pushed_at or r.created_at, reverse=True
-        )[:CANDIDATE_LIMIT]
+        candidates = sorted(candidates, key=lambda r: r.pushed_at or r.created_at, reverse=True)[:CANDIDATE_LIMIT]
 
         if not candidates:
             logger.warning("No owned non-fork repos found for %s", github_username)
@@ -269,9 +267,7 @@ def _fetch_top_repos_sync(
                 logger.warning("Skipping repo %s due to error: %s", repo.name, exc)
 
         # Return top N by activity score
-        top = sorted(all_metrics, key=lambda m: m.activity_score, reverse=True)[
-            :TOP_N_REPOS
-        ]
+        top = sorted(all_metrics, key=lambda m: m.activity_score, reverse=True)[:TOP_N_REPOS]
         logger.info(
             "Top %d repos for %s: %s",
             len(top),
@@ -321,9 +317,7 @@ def _fetch_repo_list_sync(github_token: str) -> tuple[str, list[dict]]:
                 logger.warning("Could not fetch repos for org %s: %s", org.login, e)
                 continue
 
-        all_repos = sorted(
-            all_repos, key=lambda r: r.pushed_at or r.created_at, reverse=True
-        )
+        all_repos = sorted(all_repos, key=lambda r: r.pushed_at or r.created_at, reverse=True)
 
         repos = []
         for repo in all_repos:
@@ -364,9 +358,7 @@ def _format_repo_block(m: RepoMetrics) -> str:
     lang_breakdown = (
         ", ".join(
             f"{lang} ({bytes_count:,} bytes)"
-            for lang, bytes_count in sorted(
-                m.languages.items(), key=lambda x: x[1], reverse=True
-            )
+            for lang, bytes_count in sorted(m.languages.items(), key=lambda x: x[1], reverse=True)
         )
         or "No language data"
     )
@@ -542,12 +534,10 @@ async def _call_gemini(
             complexity_rating=data.get("complexity_rating", "Medium"),
             repos_analyzed=data.get("repos_analyzed", [m.name for m in metrics]),
             reasoning=data.get("reasoning", ""),
-            generated_at=datetime.now(tz=timezone.utc).isoformat(),
+            generated_at=datetime.now(tz=UTC).isoformat(),
         )
     except ValidationError as exc:
-        logger.error(
-            "VerificationReport validation failed.\nData: %s\nErrors: %s", data, exc
-        )
+        logger.error("VerificationReport validation failed.\nData: %s\nErrors: %s", data, exc)
         raise RuntimeError(f"Gemini returned unexpected field values: {exc}") from exc
 
 
@@ -579,9 +569,7 @@ async def generate_verification_report(
 
     # ── Phase 1: Fetch and rank repos (blocking I/O → run in thread) ──────────
     # Excluded repos are filtered before ranking so the next best repo fills the gap.
-    github_username, top_metrics = await asyncio.to_thread(
-        _fetch_top_repos_sync, github_token, excluded_repo_names
-    )
+    github_username, top_metrics = await asyncio.to_thread(_fetch_top_repos_sync, github_token, excluded_repo_names)
 
     if not top_metrics:
         raise ValueError(
