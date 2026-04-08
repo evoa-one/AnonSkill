@@ -1,3 +1,13 @@
+# ── Step 1: First apply ───────────────────────────────────────────────────────
+# Keep initial_deploy = true so Cloud Run uses a placeholder image.
+# Run: terraform init && terraform apply
+# Then get the Cloud Run URLs from the outputs and fill in backend_url/frontend_url below.
+initial_deploy = true
+
+# ── Step 2: After pushing real images ────────────────────────────────────────
+# Run: ./scripts/build-and-push.sh prod
+# Then set initial_deploy = false and run: terraform apply
+
 project_id      = "your-gcp-project-id"
 region          = "us-central1"
 auth0_domain    = "your-tenant.us.auth0.com"

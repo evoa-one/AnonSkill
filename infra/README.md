@@ -37,7 +37,7 @@ terraform init
 terraform apply
 
 # 3. Build & push images, then deploy to Cloud Run
-cd ../..
+cd ../../
 ./scripts/build-and-push.sh dev
 
 # 4. Set initial_deploy = false in terraform.tfvars and apply again
