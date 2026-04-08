@@ -24,6 +24,12 @@ variable "auth0_client_id" {
   type        = string
 }
 
+variable "auth0_client_secret" {
+  description = "Auth0 client secret"
+  type        = string
+  sensitive   = true
+}
+
 variable "backend_url" {
   description = "Public backend URL (Cloudflare custom domain or raw .run.app URL)"
   type        = string
@@ -32,4 +38,28 @@ variable "backend_url" {
 variable "frontend_url" {
   description = "Public frontend URL (Cloudflare custom domain or raw .run.app URL)"
   type        = string
+}
+
+variable "gemini_api_key" {
+  description = "Gemini API key"
+  type        = string
+  sensitive   = true
+}
+
+variable "custom_domain_enabled" {
+  description = "Enable Cloud Run custom domain mappings"
+  type        = bool
+  default     = false
+}
+
+variable "backend_custom_domain" {
+  description = "Custom domain for backend"
+  type        = string
+  default     = ""
+}
+
+variable "frontend_custom_domain" {
+  description = "Custom domain for frontend"
+  type        = string
+  default     = ""
 }
