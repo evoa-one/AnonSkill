@@ -13,13 +13,17 @@ echo "Registry    : $REGISTRY"
 # Configure Docker auth
 gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 
-# Determine API URL based on env
-if [ "$ENV" = "dev" ]; then
-  API_URL="https://anon-skill-dev-backend-xxxx-uc.a.run.app"
-  echo "NOTE: Update API_URL in this script after first terraform apply for dev."
+# Determine API URL — can be overridden via NEXT_PUBLIC_API_URL env var
+# Usage: NEXT_PUBLIC_API_URL=https://my-api.example.com ./scripts/build-and-push.sh dev
+if [ -n "$NEXT_PUBLIC_API_URL" ]; then
+  API_URL="$NEXT_PUBLIC_API_URL"
+elif [ "$ENV" = "dev" ]; then
+  API_URL="https://api-anon-skill-dev.evoa.one"
 else
   API_URL="https://api-anon-skill.evoa.one"
 fi
+
+echo "API URL     : $API_URL"
 
 # Backend
 echo "Building backend..."
