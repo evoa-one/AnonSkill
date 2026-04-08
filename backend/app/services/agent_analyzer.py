@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 TOP_N_REPOS = 3           # Number of repos to deep-analyze
 CANDIDATE_LIMIT = 100     # Max repos fetched before scoring
+DEEP_ANALYSIS_LIMIT = 20  # Max repos for deep analysis (API calls); pre-sorted by recency
 STATS_RETRY_SLEEP = 3     # Seconds to wait if GitHub stats API returns 202
 STATS_MAX_RETRIES = 3     # Retry attempts for the stats endpoint
 
@@ -227,9 +228,9 @@ def _fetch_top_repos_sync(github_token: str) -> tuple[str, list[RepoMetrics]]:
             logger.warning("No owned non-fork repos found for %s", github_username)
             return github_username, []
 
-        # Collect metrics for each candidate
+        # Collect metrics for top candidates only (sorted by recency, limit API calls)
         all_metrics: list[RepoMetrics] = []
-        for repo in candidates:
+        for repo in candidates[:DEEP_ANALYSIS_LIMIT]:
             try:
                 m = _collect_repo_metrics(repo)
                 all_metrics.append(m)
