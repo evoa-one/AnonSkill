@@ -25,6 +25,11 @@ fi
 
 echo "API URL     : $API_URL"
 
+# Lint
+echo "Running ruff..."
+uv run ruff check ./backend
+uv run ruff format --check ./backend
+
 # Backend
 echo "Building backend..."
 docker build --platform linux/amd64 -t ${REGISTRY}/backend:latest ./backend
