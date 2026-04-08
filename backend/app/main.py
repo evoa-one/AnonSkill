@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 # ── Lifespan ─────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     logger.info(
         "AnonSkill API started.  Auth0 domain: %s  Audience: %s",
         settings.auth0_domain,

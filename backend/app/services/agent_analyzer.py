@@ -209,7 +209,7 @@ def _fetch_top_repos_sync(github_token: str, excluded_repo_names: set[str] | Non
             seen.add(repo.id)
             candidates.append(repo)
 
-        for repo in user.get_repos(type="owner", sort="pushed"):
+        for repo in user.get_repos(type="all", sort="pushed", per_page=100):
             _add_repo(repo)
             if len(candidates) >= CANDIDATE_LIMIT:
                 break
@@ -274,8 +274,10 @@ def _fetch_repo_list_sync(github_token: str) -> tuple[str, list[dict]]:
             seen.add(repo.id)
             all_repos.append(repo)
 
-        for repo in user.get_repos(type="owner", sort="pushed"):
+        for repo in user.get_repos(type="all", sort="pushed", per_page=100):
             _add(repo)
+            if len(all_repos) >= CANDIDATE_LIMIT:
+                break
 
         orgs = list(user.get_orgs())
         logger.info("Orgs found for %s: %s", github_username, [o.login for o in orgs])
