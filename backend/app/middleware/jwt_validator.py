@@ -13,10 +13,11 @@ it as the `subject_token` — Auth0 uses it to look up and decrypt the stored
 GitHub token.
 """
 
+import time
 from dataclasses import dataclass
-from functools import lru_cache
 
 import httpx
+from app.constants import JWKS_TTL
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
@@ -39,24 +40,37 @@ class AuthContext:
 
 # ── JWKS helpers ──────────────────────────────────────────────────────────────
 
-@lru_cache(maxsize=1)
+_jwks_cache: dict = {}
+_jwks_fetched_at: float = 0.0
+
+
 def _fetch_jwks() -> dict:
-    """Download Auth0's JWKS once and cache it for the process lifetime."""
-    jwks_url  = f"https://{settings.auth0_domain}/.well-known/jwks.json"
-    response  = httpx.get(jwks_url, timeout=10)
+    """Download Auth0's JWKS and cache it with a TTL."""
+    global _jwks_cache, _jwks_fetched_at
+    if _jwks_cache and (time.time() - _jwks_fetched_at) < JWKS_TTL:
+        return _jwks_cache
+    jwks_url = f"https://{settings.auth0_domain}/.well-known/jwks.json"
+    response = httpx.get(jwks_url, timeout=10)
     response.raise_for_status()
-    return response.json()
+    _jwks_cache = response.json()
+    _jwks_fetched_at = time.time()
+    return _jwks_cache
 
 
 def _get_rsa_key(token: str) -> dict:
-    """Match the JWT's `kid` header to a key in the JWKS."""
-    jwks              = _fetch_jwks()
+    """Match the JWT's `kid` header to a key in the JWKS. Retries once on cache miss."""
+    global _jwks_fetched_at
     unverified_header = jwt.get_unverified_header(token)
+    kid = unverified_header.get("kid")
 
-    for key in jwks["keys"]:
-        if key["kid"] == unverified_header.get("kid"):
-            return {"kty": key["kty"], "kid": key["kid"],
-                    "use": key["use"], "n": key["n"], "e": key["e"]}
+    for _ in range(2):
+        jwks = _fetch_jwks()
+        for key in jwks["keys"]:
+            if key["kid"] == kid:
+                return {"kty": key["kty"], "kid": key["kid"],
+                        "use": key["use"], "n": key["n"], "e": key["e"]}
+        # Key not found — force cache refresh on next attempt
+        _jwks_fetched_at = 0.0
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

@@ -36,20 +36,17 @@ from github.Repository import Repository
 from pydantic import ValidationError
 
 from app.config import settings
+from app.constants import (
+    CANDIDATE_LIMIT,
+    DEEP_ANALYSIS_LIMIT,
+    RECENT_WEEKS,
+    STATS_MAX_RETRIES,
+    STATS_RETRY_SLEEP,
+    TOP_N_REPOS,
+)
 from app.models.schemas import VerificationReport
 
 logger = logging.getLogger(__name__)
-
-# ── Constants ─────────────────────────────────────────────────────────────────
-
-TOP_N_REPOS = 3           # Number of repos to deep-analyze
-CANDIDATE_LIMIT = 100     # Max repos fetched before scoring
-DEEP_ANALYSIS_LIMIT = 20  # Max repos for deep analysis (API calls); pre-sorted by recency
-STATS_RETRY_SLEEP = 3     # Seconds to wait if GitHub stats API returns 202
-STATS_MAX_RETRIES = 3     # Retry attempts for the stats endpoint
-
-# Weeks to consider "recent" (GitHub participation stats are weekly)
-RECENT_WEEKS = 13         # ≈ 90 days
 
 # Languages that are markup/template/config — excluded from skill language list
 # because they don't reflect programming depth
