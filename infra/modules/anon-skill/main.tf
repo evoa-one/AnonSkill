@@ -151,6 +151,36 @@ resource "google_cloud_run_v2_service_iam_member" "frontend_public" {
   member   = "allUsers"
 }
 
+# ── Custom Domain Mappings (optional) ────────────────────────────────────────
+
+resource "google_cloud_run_domain_mapping" "backend" {
+  count    = var.custom_domain_enabled ? 1 : 0
+  location = var.region
+  name     = var.backend_custom_domain
+
+  metadata {
+    namespace = var.project_id
+  }
+
+  spec {
+    route_name = google_cloud_run_v2_service.backend.name
+  }
+}
+
+resource "google_cloud_run_domain_mapping" "frontend" {
+  count    = var.custom_domain_enabled ? 1 : 0
+  location = var.region
+  name     = var.frontend_custom_domain
+
+  metadata {
+    namespace = var.project_id
+  }
+
+  spec {
+    route_name = google_cloud_run_v2_service.frontend.name
+  }
+}
+
 # ── Secret Manager ────────────────────────────────────────────────────────────
 
 resource "google_secret_manager_secret" "auth0_client_secret" {

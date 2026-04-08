@@ -56,3 +56,21 @@ variable "github_connection_name" {
   type        = string
   default     = "github"
 }
+
+variable "custom_domain_enabled" {
+  description = "Enable Cloud Run custom domain mappings (requires domain verification in GCP)"
+  type        = bool
+  default     = false
+}
+
+variable "backend_custom_domain" {
+  description = "Custom domain for backend (e.g. api-anon-skill-dev.evoa.one)"
+  type        = string
+  default     = ""
+}
+
+variable "frontend_custom_domain" {
+  description = "Custom domain for frontend (e.g. anon-skill-dev.evoa.one)"
+  type        = string
+  default     = ""
+}
