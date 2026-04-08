@@ -61,6 +61,7 @@ _pending_connect_states: dict[str, dict[str, Any]] = {}
 
 # ── Step 1: Build authorization URL ──────────────────────────────────────────
 
+
 @router.get(
     "/github/authorize",
     response_model=AuthorizeResponse,
@@ -96,13 +97,13 @@ def initiate_github_oauth() -> AuthorizeResponse:
 
     params = {
         "response_type": "code",
-        "client_id":     settings.auth0_client_id,
-        "redirect_uri":  settings.callback_url,
-        "scope":         "openid profile email offline_access",
-        "audience":      settings.auth0_audience,
-        "connection":    settings.github_connection_name,
-        "prompt":        "login",
-        "state":         state,
+        "client_id": settings.auth0_client_id,
+        "redirect_uri": settings.callback_url,
+        "scope": "openid profile email offline_access",
+        "audience": settings.auth0_audience,
+        "connection": settings.github_connection_name,
+        "prompt": "login",
+        "state": state,
     }
 
     query_string = urllib.parse.urlencode(params)
@@ -113,6 +114,7 @@ def initiate_github_oauth() -> AuthorizeResponse:
 
 
 # ── Step 2: Handle the callback from Auth0 ────────────────────────────────────
+
 
 @router.get(
     "/callback",
@@ -125,9 +127,13 @@ def initiate_github_oauth() -> AuthorizeResponse:
     ),
 )
 async def oauth_callback(
-    code: str | None = Query(None, description="One-time authorization code from Auth0"),
+    code: str | None = Query(
+        None, description="One-time authorization code from Auth0"
+    ),
     state: str | None = Query(None, description="State token echoed back by Auth0"),
-    error: str | None = Query(None, description="Set by Auth0 if the user denied access"),
+    error: str | None = Query(
+        None, description="Set by Auth0 if the user denied access"
+    ),
     error_description: str | None = Query(None),
 ) -> RedirectResponse:
     """
@@ -141,7 +147,9 @@ async def oauth_callback(
     """
     # ── Guard: Auth0 returned an error (e.g. user denied, client not authorized) ─
     if error or not code:
-        logger.warning("Auth0 returned an error on callback: %s – %s", error, error_description)
+        logger.warning(
+            "Auth0 returned an error on callback: %s – %s", error, error_description
+        )
         redirect_url = (
             f"{settings.frontend_url}/auth/error"
             f"?error={error or 'missing_code'}&description={error_description or ''}"
@@ -150,7 +158,9 @@ async def oauth_callback(
 
     # ── Guard: validate CSRF state token ─────────────────────────────────────
     if not state or state not in _pending_states:
-        logger.error("Unknown or replayed state token received on callback: %s", state[:8])
+        logger.error(
+            "Unknown or replayed state token received on callback: %s", state[:8]
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid state token. Possible CSRF attempt.",
@@ -174,6 +184,7 @@ async def oauth_callback(
 
 # ── Step 3: Initiate GitHub Connected Account for Token Vault ─────────────────
 
+
 @router.get(
     "/github/connect",
     summary="Initiate GitHub Token Vault connect flow",
@@ -189,22 +200,24 @@ async def initiate_github_connect(
     my_account_token = await _get_my_account_token(auth.user_id)
 
     # PKCE
-    code_verifier  = secrets.token_urlsafe(64)
-    code_challenge = base64.urlsafe_b64encode(
-        hashlib.sha256(code_verifier.encode()).digest()
-    ).rstrip(b"=").decode()
+    code_verifier = secrets.token_urlsafe(64)
+    code_challenge = (
+        base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest())
+        .rstrip(b"=")
+        .decode()
+    )
 
-    state            = secrets.token_urlsafe(32)
+    state = secrets.token_urlsafe(32)
     connect_callback = f"{settings.connect_callback_url}"
 
     async with httpx.AsyncClient(timeout=15) as client:
         response = await client.post(
             f"https://{settings.auth0_domain}/me/v1/connected-accounts/connect",
             json={
-                "connection":            settings.github_connection_name,
-                "redirect_uri":          connect_callback,
-                "state":                 state,
-                "code_challenge":        code_challenge,
+                "connection": settings.github_connection_name,
+                "redirect_uri": connect_callback,
+                "state": state,
+                "code_challenge": code_challenge,
                 "code_challenge_method": "S256",
             },
             headers={"Authorization": f"Bearer {my_account_token}"},
@@ -217,18 +230,22 @@ async def initiate_github_connect(
             detail=f"Failed to initiate GitHub connect: {response.json().get('detail', response.text)}",
         )
 
-    data        = response.json()
-    ticket      = data["connect_params"]["ticket"]
+    data = response.json()
+    ticket = data["connect_params"]["ticket"]
     connect_uri = data["connect_uri"]
 
     # Auth0 returns the base URI without the ticket — append it.
-    separator   = "&" if "?" in connect_uri else "?"
+    separator = "&" if "?" in connect_uri else "?"
     connect_url = f"{connect_uri}{separator}ticket={ticket}"
 
-    logger.info("GitHub connect initiated for user: %s  connect_uri: %s", auth.user_id, connect_uri)
+    logger.info(
+        "GitHub connect initiated for user: %s  connect_uri: %s",
+        auth.user_id,
+        connect_uri,
+    )
 
     _pending_connect_states[state] = {
-        "user_sub":     auth.user_id,
+        "user_sub": auth.user_id,
         "auth_session": data["auth_session"],
         "code_verifier": code_verifier,
         "redirect_uri": connect_callback,
@@ -244,6 +261,7 @@ async def initiate_github_connect(
 
 # ── Step 4: Complete GitHub Connected Account connection ──────────────────────
 
+
 @router.get(
     "/github/connect/callback",
     response_class=RedirectResponse,
@@ -251,16 +269,18 @@ async def initiate_github_connect(
 )
 async def complete_github_connect(
     connect_code: str = Query(...),
-    state: str        = Query(...),
+    state: str = Query(...),
 ) -> RedirectResponse:
     if state not in _pending_connect_states:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid state.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid state."
+        )
 
     connect_state = _pending_connect_states.pop(state)
-    user_sub      = connect_state["user_sub"]
-    auth_session  = connect_state["auth_session"]
+    user_sub = connect_state["user_sub"]
+    auth_session = connect_state["auth_session"]
     code_verifier = connect_state["code_verifier"]
-    redirect_uri  = connect_state["redirect_uri"]
+    redirect_uri = connect_state["redirect_uri"]
 
     my_account_token = await _get_my_account_token(user_sub)
 
@@ -268,9 +288,9 @@ async def complete_github_connect(
         response = await client.post(
             f"https://{settings.auth0_domain}/me/v1/connected-accounts/complete",
             json={
-                "auth_session":  auth_session,
-                "connect_code":  connect_code,
-                "redirect_uri":  redirect_uri,
+                "auth_session": auth_session,
+                "connect_code": connect_code,
+                "redirect_uri": redirect_uri,
                 "code_verifier": code_verifier,
             },
             headers={"Authorization": f"Bearer {my_account_token}"},
@@ -303,12 +323,12 @@ async def _get_my_account_token(user_sub: str) -> str:
         response = await client.post(
             f"https://{settings.auth0_domain}/oauth/token",
             data={
-                "grant_type":    "refresh_token",
-                "client_id":     settings.auth0_client_id,
+                "grant_type": "refresh_token",
+                "client_id": settings.auth0_client_id,
                 "client_secret": settings.auth0_client_secret,
                 "refresh_token": refresh_token,
-                "audience":      f"https://{settings.auth0_domain}/me/",
-                "scope":         "create:me:connected_accounts read:me:connected_accounts",
+                "audience": f"https://{settings.auth0_domain}/me/",
+                "scope": "create:me:connected_accounts read:me:connected_accounts",
             },
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
@@ -337,11 +357,11 @@ async def _exchange_code_for_tokens(code: str) -> TokenResponse:
         HTTPException 502: If Auth0 returns an unexpected response.
     """
     payload = {
-        "grant_type":    "authorization_code",
-        "client_id":     settings.auth0_client_id,
+        "grant_type": "authorization_code",
+        "client_id": settings.auth0_client_id,
         "client_secret": settings.auth0_client_secret,
-        "code":          code,
-        "redirect_uri":  settings.callback_url,
+        "code": code,
+        "redirect_uri": settings.callback_url,
     }
 
     async with httpx.AsyncClient(timeout=15) as client:
@@ -362,9 +382,11 @@ async def _exchange_code_for_tokens(code: str) -> TokenResponse:
             detail="Failed to exchange authorization code with Auth0.",
         )
 
-    data         = response.json()
-    id_token      = data.get("id_token") or data.get("access_token")
-    refresh_token = data.get("refresh_token")  # Auth0 refresh token — subject_token for Token Vault
+    data = response.json()
+    id_token = data.get("id_token") or data.get("access_token")
+    refresh_token = data.get(
+        "refresh_token"
+    )  # Auth0 refresh token — subject_token for Token Vault
 
     # Store the Auth0 refresh token server-side for the Token Vault refresh-token exchange.
     # Requires a GitHub App (not OAuth App) — GitHub Apps issue refresh tokens.
@@ -377,14 +399,17 @@ async def _exchange_code_for_tokens(code: str) -> TokenResponse:
     if refresh_token:
         from jose import jwt as _jwt
         from app.services import token_store
+
         try:
             claims = _jwt.get_unverified_claims(id_token)
-            sub    = claims.get("sub", "")
+            sub = claims.get("sub", "")
             logger.info("Storing refresh_token for sub: %s", sub)
             if sub:
                 token_store.save(sub, refresh_token)
         except Exception:
-            logger.warning("Could not extract sub from id_token to store refresh token.")
+            logger.warning(
+                "Could not extract sub from id_token to store refresh token."
+            )
 
     return TokenResponse(
         access_token=id_token,

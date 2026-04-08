@@ -41,6 +41,7 @@ router = APIRouter(prefix="/agent", tags=["Agent"])
 
 # ── Helper: resolve GitHub token with standard error mapping ──────────────────
 
+
 async def _resolve_github_token(auth: AuthContext) -> str:
     """
     Look up the stored refresh token for this user, then exchange it via
@@ -69,6 +70,7 @@ async def _resolve_github_token(auth: AuthContext) -> str:
 
 # ── GET /agent/repos ──────────────────────────────────────────────────────────
 
+
 @router.get(
     "/repos",
     response_model=dict,
@@ -88,10 +90,14 @@ async def list_repos(
         ) from exc
     finally:
         github_token = ""
-    return {"github_username": github_username, "repos": [r.model_dump() for r in repos]}
+    return {
+        "github_username": github_username,
+        "repos": [r.model_dump() for r in repos],
+    }
 
 
 # ── POST /agent/analyze ───────────────────────────────────────────────────────
+
 
 @router.post(
     "/analyze",
@@ -112,7 +118,9 @@ async def analyze_skills(
     github_token = await _resolve_github_token(auth)
 
     try:
-        report = await build_skill_report(github_token=github_token, max_repos=max_repos)
+        report = await build_skill_report(
+            github_token=github_token, max_repos=max_repos
+        )
     except Exception as exc:
         logger.error("GitHub analysis failed for user %s: %s", auth.user_id, exc)
         raise HTTPException(
@@ -124,12 +132,15 @@ async def analyze_skills(
 
     logger.info(
         "Skill report done for %s: %d repos, %d skills.",
-        auth.user_id, report.total_repos_analyzed, len(report.detected_skills),
+        auth.user_id,
+        report.total_repos_analyzed,
+        len(report.detected_skills),
     )
     return report
 
 
 # ── POST /agent/verify ────────────────────────────────────────────────────────
+
 
 @router.post(
     "/verify",
@@ -158,7 +169,8 @@ async def verify_skills(
     """
     logger.info(
         "AI verification requested for user: %s  excluded_languages: %s",
-        auth.user_id, body.excluded_languages,
+        auth.user_id,
+        body.excluded_languages,
     )
     github_token = await _resolve_github_token(auth)
 
@@ -180,7 +192,12 @@ async def verify_skills(
             detail="Verification pipeline failed. Check GitHub token and Gemini API key.",
         ) from exc
     except Exception as exc:
-        logger.error("Unexpected error in verify_skills for user %s: %s", auth.user_id, exc, exc_info=True)
+        logger.error(
+            "Unexpected error in verify_skills for user %s: %s",
+            auth.user_id,
+            exc,
+            exc_info=True,
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during verification.",
@@ -190,12 +207,16 @@ async def verify_skills(
 
     logger.info(
         "Verification report done for %s: skill=%s  score=%d  confidence=%s",
-        auth.user_id, report.skill_level, report.security_score, report.confidence,
+        auth.user_id,
+        report.skill_level,
+        report.security_score,
+        report.confidence,
     )
     return report
 
 
 # ── GET /agent/vault/status ───────────────────────────────────────────────────
+
 
 @router.get(
     "/vault/status",

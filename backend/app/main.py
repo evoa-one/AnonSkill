@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 # ── Lifespan ─────────────────────────────────────────────────────────────────
 
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     logger.info(
@@ -81,9 +82,8 @@ app.include_router(agent.router)
 
 # ── Health probe ──────────────────────────────────────────────────────────────
 
+
 @app.get("/health", tags=["Infra"], summary="Liveness probe")
 def health() -> dict[str, str]:
     """Returns 200 OK as long as the process is running."""
     return {"status": "ok"}
-
-

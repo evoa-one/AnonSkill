@@ -11,20 +11,28 @@ from pydantic import BaseModel, Field, field_validator
 
 # ── OAuth ─────────────────────────────────────────────────────────────────────
 
+
 class AuthorizeResponse(BaseModel):
     """Returned by GET /oauth/github/authorize – tells the caller where to redirect."""
-    authorization_url: str = Field(..., description="Full Auth0 authorization URL to redirect the user to")
-    state: str = Field(..., description="CSRF-prevention state token; must be validated on callback")
+
+    authorization_url: str = Field(
+        ..., description="Full Auth0 authorization URL to redirect the user to"
+    )
+    state: str = Field(
+        ..., description="CSRF-prevention state token; must be validated on callback"
+    )
 
 
 class CallbackRequest(BaseModel):
     """Query parameters forwarded by Auth0 after the user grants access."""
+
     code: str = Field(..., description="One-time authorization code from Auth0")
     state: str = Field(..., description="State token echoed back by Auth0")
 
 
 class TokenResponse(BaseModel):
     """Opaque tokens returned to the frontend after a successful OAuth exchange."""
+
     access_token: str
     token_type: str = "Bearer"
     expires_in: int
@@ -34,11 +42,13 @@ class TokenResponse(BaseModel):
 
 # ── Agent / Analysis ──────────────────────────────────────────────────────────
 
+
 class RepoSummary(BaseModel):
     """
     Non-identifying summary of a single repository.
     Raw file content, commit messages, and email addresses are NEVER included.
     """
+
     name: str
     primary_language: Optional[str]
     languages: dict[str, int] = Field(
@@ -53,6 +63,7 @@ class RepoSummary(BaseModel):
 
 class SkillReport(BaseModel):
     """Structured skill assessment produced by the AI agent."""
+
     github_username: str
     total_repos_analyzed: int
     detected_skills: list[str] = Field(
@@ -71,8 +82,10 @@ class SkillReport(BaseModel):
 
 # ── Verify request ───────────────────────────────────────────────────────────
 
+
 class RepoInfo(BaseModel):
     """Basic repo info returned by GET /agent/repos for the configure step."""
+
     name: str
     top_language: str
     languages: list[str]
@@ -83,11 +96,13 @@ class RepoInfo(BaseModel):
 
 class VerifyRequest(BaseModel):
     """Optional configuration for POST /agent/verify."""
+
     excluded_languages: list[str] = Field(default_factory=list)
     excluded_repos: list[str] = Field(default_factory=list)
 
 
 # ── AI Verification Report ────────────────────────────────────────────────────
+
 
 class VerificationReport(BaseModel):
     """
@@ -139,7 +154,10 @@ class VerificationReport(BaseModel):
         # Normalize common Gemini variants: "mid level", "mid-level", "midlevel"
         normalized = v.strip().title().replace(" ", "-")
         for option in allowed:
-            if option.lower() == v.strip().lower() or option.lower() == normalized.lower():
+            if (
+                option.lower() == v.strip().lower()
+                or option.lower() == normalized.lower()
+            ):
                 return option
         # Fallback: return closest match rather than raising
         v_lower = v.strip().lower()

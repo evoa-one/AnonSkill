@@ -34,6 +34,7 @@ class AuthContext:
         user_id:      Auth0 sub claim, e.g. "github|12345678".
         access_token: The raw Bearer token — passed to Token Vault as subject_token.
     """
+
     user_id: str
     access_token: str
 
@@ -67,8 +68,13 @@ def _get_rsa_key(token: str) -> dict:
         jwks = _fetch_jwks()
         for key in jwks["keys"]:
             if key["kid"] == kid:
-                return {"kty": key["kty"], "kid": key["kid"],
-                        "use": key["use"], "n": key["n"], "e": key["e"]}
+                return {
+                    "kty": key["kty"],
+                    "kid": key["kid"],
+                    "use": key["use"],
+                    "n": key["n"],
+                    "e": key["e"],
+                }
         # Key not found — force cache refresh on next attempt
         _jwks_fetched_at = 0.0
 

@@ -51,9 +51,23 @@ logger = logging.getLogger(__name__)
 # Languages that are markup/template/config — excluded from skill language list
 # because they don't reflect programming depth
 _EXCLUDED_LANGUAGES = {
-    "HTML", "CSS", "XSLT", "XML", "Markdown", "SVG", "SCSS", "Less",
-    "Makefile", "Dockerfile", "Shell", "Batchfile", "PowerShell",
-    "INI", "TOML", "YAML", "JSON",
+    "HTML",
+    "CSS",
+    "XSLT",
+    "XML",
+    "Markdown",
+    "SVG",
+    "SCSS",
+    "Less",
+    "Makefile",
+    "Dockerfile",
+    "Shell",
+    "Batchfile",
+    "PowerShell",
+    "INI",
+    "TOML",
+    "YAML",
+    "JSON",
 }
 
 GEMINI_MODEL = "gemini-flash-latest"
@@ -61,26 +75,29 @@ GEMINI_MODEL = "gemini-flash-latest"
 
 # ── Internal data container ───────────────────────────────────────────────────
 
+
 @dataclass
 class RepoMetrics:
     """
     All metadata collected for a single repository.
     No field ever contains file content, commit messages, or email addresses.
     """
+
     name: str
-    languages: dict[str, int] = field(default_factory=dict)   # language → bytes
+    languages: dict[str, int] = field(default_factory=dict)  # language → bytes
     top_language: str = "Unknown"
     language_count: int = 0
-    commit_count_90d: int = 0    # commits in last ~90 days (13 weekly buckets)
-    commit_count_1yr: int = 0    # commits in last 52 weeks
-    repo_size_kb: int = 0        # GitHub-reported repo size
+    commit_count_90d: int = 0  # commits in last ~90 days (13 weekly buckets)
+    commit_count_1yr: int = 0  # commits in last 52 weeks
+    repo_size_kb: int = 0  # GitHub-reported repo size
     activity_score: float = 0.0  # composite score used for ranking
     topics: list[str] = field(default_factory=list)
     open_issues_count: int = 0
-    has_ci: bool = False         # inferred from topics / description keywords
+    has_ci: bool = False  # inferred from topics / description keywords
 
 
 # ── Step 1 & 2: Fetch and rank repositories ───────────────────────────────────
+
 
 def _compute_activity_score(metrics: RepoMetrics) -> float:
     """
@@ -93,10 +110,10 @@ def _compute_activity_score(metrics: RepoMetrics) -> float:
       - Repo size              : proxy for codebase maturity
     """
     return (
-        metrics.commit_count_90d  * 10.0   # recent activity is most important
+        metrics.commit_count_90d * 10.0  # recent activity is most important
         + metrics.commit_count_1yr * 2.0
-        + metrics.language_count   * 3.0
-        + metrics.repo_size_kb     * 0.001
+        + metrics.language_count * 3.0
+        + metrics.repo_size_kb * 0.001
     )
 
 
@@ -117,7 +134,9 @@ def _get_participation_stats(repo: Repository) -> tuple[int, int]:
                 if attempt < STATS_MAX_RETRIES - 1:
                     logger.debug(
                         "Stats not ready for %s (attempt %d), retrying in %ds…",
-                        repo.name, attempt + 1, STATS_RETRY_SLEEP,
+                        repo.name,
+                        attempt + 1,
+                        STATS_RETRY_SLEEP,
                     )
                     time.sleep(STATS_RETRY_SLEEP)
                     continue
@@ -126,8 +145,8 @@ def _get_participation_stats(repo: Repository) -> tuple[int, int]:
 
             # `stats.all` is a list of 52 weekly commit totals (oldest → newest)
             weekly_counts: list[int] = stats.all or []
-            commit_count_1yr  = sum(weekly_counts)
-            commit_count_90d  = sum(weekly_counts[-RECENT_WEEKS:])
+            commit_count_1yr = sum(weekly_counts)
+            commit_count_90d = sum(weekly_counts[-RECENT_WEEKS:])
             return commit_count_90d, commit_count_1yr
 
         except GithubException as exc:
@@ -159,14 +178,14 @@ def _collect_repo_metrics(repo: Repository) -> RepoMetrics:
         metrics.languages = {}
 
     if metrics.languages:
-        metrics.top_language  = max(metrics.languages, key=metrics.languages.__getitem__)
+        metrics.top_language = max(metrics.languages, key=metrics.languages.__getitem__)
         metrics.language_count = len(metrics.languages)
 
     # ── Participation stats ───────────────────────────────────────────────────
     metrics.commit_count_90d, metrics.commit_count_1yr = _get_participation_stats(repo)
 
     # ── Basic metadata ────────────────────────────────────────────────────────
-    metrics.repo_size_kb     = repo.size  # GitHub reports in KB
+    metrics.repo_size_kb = repo.size  # GitHub reports in KB
     metrics.open_issues_count = repo.open_issues_count
 
     try:
@@ -184,7 +203,9 @@ def _collect_repo_metrics(repo: Repository) -> RepoMetrics:
     return metrics
 
 
-def _fetch_top_repos_sync(github_token: str, excluded_repo_names: set[str] | None = None) -> tuple[str, list[RepoMetrics]]:
+def _fetch_top_repos_sync(
+    github_token: str, excluded_repo_names: set[str] | None = None
+) -> tuple[str, list[RepoMetrics]]:
     """
     Synchronous worker: fetches repos, ranks them, and returns the top N.
 
@@ -223,7 +244,9 @@ def _fetch_top_repos_sync(github_token: str, excluded_repo_names: set[str] | Non
             except GithubException:
                 continue
 
-        candidates = sorted(candidates, key=lambda r: r.pushed_at or r.created_at, reverse=True)[:CANDIDATE_LIMIT]
+        candidates = sorted(
+            candidates, key=lambda r: r.pushed_at or r.created_at, reverse=True
+        )[:CANDIDATE_LIMIT]
 
         if not candidates:
             logger.warning("No owned non-fork repos found for %s", github_username)
@@ -237,16 +260,23 @@ def _fetch_top_repos_sync(github_token: str, excluded_repo_names: set[str] | Non
                 all_metrics.append(m)
                 logger.debug(
                     "Repo %s: score=%.1f  commits_90d=%d  languages=%d",
-                    repo.name, m.activity_score, m.commit_count_90d, m.language_count,
+                    repo.name,
+                    m.activity_score,
+                    m.commit_count_90d,
+                    m.language_count,
                 )
             except Exception as exc:
                 logger.warning("Skipping repo %s due to error: %s", repo.name, exc)
 
         # Return top N by activity score
-        top = sorted(all_metrics, key=lambda m: m.activity_score, reverse=True)[:TOP_N_REPOS]
+        top = sorted(all_metrics, key=lambda m: m.activity_score, reverse=True)[
+            :TOP_N_REPOS
+        ]
         logger.info(
             "Top %d repos for %s: %s",
-            len(top), github_username, [m.name for m in top],
+            len(top),
+            github_username,
+            [m.name for m in top],
         )
         return github_username, top
 
@@ -260,6 +290,7 @@ def _fetch_repo_list_sync(github_token: str) -> tuple[str, list[dict]]:
     Returns (github_username, list of repo dicts).
     """
     from app.models.schemas import RepoInfo
+
     client = Github(github_token, per_page=100)
     try:
         user = client.get_user()
@@ -290,7 +321,9 @@ def _fetch_repo_list_sync(github_token: str) -> tuple[str, list[dict]]:
                 logger.warning("Could not fetch repos for org %s: %s", org.login, e)
                 continue
 
-        all_repos = sorted(all_repos, key=lambda r: r.pushed_at or r.created_at, reverse=True)
+        all_repos = sorted(
+            all_repos, key=lambda r: r.pushed_at or r.created_at, reverse=True
+        )
 
         repos = []
         for repo in all_repos:
@@ -302,14 +335,16 @@ def _fetch_repo_list_sync(github_token: str) -> tuple[str, list[dict]]:
             top_language = languages[0] if languages else "Unknown"
             is_org = repo.owner.login != github_username
 
-            repos.append(RepoInfo(
-                name=repo.name,
-                top_language=top_language,
-                languages=languages,
-                commit_count_90d=0,
-                repo_size_kb=repo.size,
-                is_org=is_org,
-            ))
+            repos.append(
+                RepoInfo(
+                    name=repo.name,
+                    top_language=top_language,
+                    languages=languages,
+                    commit_count_90d=0,
+                    repo_size_kb=repo.size,
+                    is_org=is_org,
+                )
+            )
 
         return github_username, repos
     finally:
@@ -323,12 +358,18 @@ async def get_repo_list(github_token: str) -> tuple[str, list]:
 
 # ── Step 3: Build the Gemini prompt ──────────────────────────────────────────
 
+
 def _format_repo_block(m: RepoMetrics) -> str:
     """Render one repo's metrics as a readable text block for the prompt."""
-    lang_breakdown = ", ".join(
-        f"{lang} ({bytes_count:,} bytes)"
-        for lang, bytes_count in sorted(m.languages.items(), key=lambda x: x[1], reverse=True)
-    ) or "No language data"
+    lang_breakdown = (
+        ", ".join(
+            f"{lang} ({bytes_count:,} bytes)"
+            for lang, bytes_count in sorted(
+                m.languages.items(), key=lambda x: x[1], reverse=True
+            )
+        )
+        or "No language data"
+    )
 
     return f"""
 Repository: {m.name}
@@ -452,6 +493,7 @@ Return a single JSON object matching the schema. No markdown, no explanation out
 
 # ── Step 4: Call Gemini ───────────────────────────────────────────────────────
 
+
 async def _call_gemini(
     github_username: str,
     metrics: list[RepoMetrics],
@@ -467,7 +509,7 @@ async def _call_gemini(
     model = genai.GenerativeModel(
         model_name=GEMINI_MODEL,
         generation_config=genai.GenerationConfig(
-            temperature=0.2,          # Low temperature for consistent, factual output
+            temperature=0.2,  # Low temperature for consistent, factual output
             response_mime_type="application/json",
             response_schema=_VERIFICATION_SCHEMA,
         ),
@@ -503,11 +545,14 @@ async def _call_gemini(
             generated_at=datetime.now(tz=timezone.utc).isoformat(),
         )
     except ValidationError as exc:
-        logger.error("VerificationReport validation failed.\nData: %s\nErrors: %s", data, exc)
+        logger.error(
+            "VerificationReport validation failed.\nData: %s\nErrors: %s", data, exc
+        )
         raise RuntimeError(f"Gemini returned unexpected field values: {exc}") from exc
 
 
 # ── Public entry point ────────────────────────────────────────────────────────
+
 
 async def generate_verification_report(
     github_token: str,
