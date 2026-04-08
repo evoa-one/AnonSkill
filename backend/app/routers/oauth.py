@@ -37,6 +37,7 @@ import hashlib
 import base64
 import logging
 import secrets
+import urllib.parse
 from typing import Any
 
 import httpx
@@ -104,8 +105,7 @@ def initiate_github_oauth() -> AuthorizeResponse:
         "state":         state,
     }
 
-    # Build the URL manually so we control encoding
-    query_string = "&".join(f"{k}={v}" for k, v in params.items())
+    query_string = urllib.parse.urlencode(params)
     authorization_url = f"https://{settings.auth0_domain}/authorize?{query_string}"
 
     logger.debug("Authorization URL generated (state=%s…)", state[:8])
