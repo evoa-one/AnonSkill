@@ -3,6 +3,12 @@ variable "project_id" {
   type        = string
 }
 
+variable "initial_deploy" {
+  description = "Set to true on first apply to use a placeholder image (before real images are pushed)"
+  type        = bool
+  default     = false
+}
+
 variable "region" {
   description = "GCP region"
   type        = string

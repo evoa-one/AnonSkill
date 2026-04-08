@@ -45,6 +45,20 @@ docker build \
 docker push ${REGISTRY}/frontend:latest
 
 echo ""
-echo "Done! Images pushed to $REGISTRY"
+echo "Updating Cloud Run images..."
+
+_update_service() {
+  local SERVICE=$1
+  local IMAGE=$2
+  if gcloud run services describe "$SERVICE" --region ${REGION} &>/dev/null; then
+    gcloud run services update "$SERVICE" --image "$IMAGE" --region ${REGION}
+  else
+    echo "Service $SERVICE not found — run 'terraform apply' first to create it."
+  fi
+}
+
+_update_service "anon-skill-${ENV}-backend"  "${REGISTRY}/backend:latest"
+_update_service "anon-skill-${ENV}-frontend" "${REGISTRY}/frontend:latest"
+
 echo ""
-echo "Next: cd infra/envs/${ENV} && terraform apply"
+echo "Done! (env: $ENV)"

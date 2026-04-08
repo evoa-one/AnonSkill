@@ -58,7 +58,7 @@ resource "google_cloud_run_v2_service" "backend" {
     service_account = google_service_account.backend.email
 
     containers {
-      image = "${local.registry}/backend:latest"
+      image = var.initial_deploy ? "us-docker.pkg.dev/cloudrun/container/hello" : "${local.registry}/backend:latest"
 
       ports {
         container_port = 8000
@@ -134,7 +134,7 @@ resource "google_cloud_run_v2_service" "frontend" {
 
   template {
     containers {
-      image = "${local.registry}/frontend:latest"
+      image = var.initial_deploy ? "us-docker.pkg.dev/cloudrun/container/hello" : "${local.registry}/frontend:latest"
 
       ports {
         container_port = 3000

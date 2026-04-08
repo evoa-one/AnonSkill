@@ -46,6 +46,12 @@ variable "gemini_api_key" {
   sensitive   = true
 }
 
+variable "initial_deploy" {
+  description = "Set to true on first apply to use a placeholder image"
+  type        = bool
+  default     = false
+}
+
 variable "custom_domain_enabled" {
   description = "Enable Cloud Run custom domain mappings"
   type        = bool
