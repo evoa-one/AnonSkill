@@ -230,7 +230,7 @@ def _fetch_top_repos_sync(
             seen.add(repo.id)
             candidates.append(repo)
 
-        for repo in user.get_repos(type="all", sort="pushed", per_page=100):
+        for repo in user.get_repos(type="all", sort="pushed"):
             _add_repo(repo)
             if len(candidates) >= CANDIDATE_LIMIT:
                 break
@@ -301,7 +301,7 @@ def _fetch_repo_list_sync(github_token: str) -> tuple[str, list[dict]]:
             seen.add(repo.id)
             all_repos.append(repo)
 
-        for repo in user.get_repos(type="all", sort="pushed", per_page=100):
+        for repo in user.get_repos(type="all", sort="pushed"):
             _add(repo)
             if len(all_repos) >= CANDIDATE_LIMIT:
                 break
