@@ -234,6 +234,11 @@ async def initiate_github_connect(
         "redirect_uri": connect_callback,
     }
 
+    # Prune to avoid unbounded growth (same pattern as _pending_states)
+    if len(_pending_connect_states) > 200:
+        oldest_key = next(iter(_pending_connect_states))
+        del _pending_connect_states[oldest_key]
+
     return JSONResponse({"connect_url": connect_url})
 
 

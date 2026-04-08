@@ -29,7 +29,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.middleware.jwt_validator import AuthContext, get_auth_context
-from app.models.schemas import RepoInfo, SkillReport, VerificationReport, VerifyRequest
+from app.models.schemas import SkillReport, VerificationReport, VerifyRequest
 from app.services.agent_analyzer import generate_verification_report, get_repo_list
 from app.services.github_client import build_skill_report
 from app.services import token_store
