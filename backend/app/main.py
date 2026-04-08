@@ -14,6 +14,7 @@ Startup order:
 
 import logging
 import sys
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,9 +33,22 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+# ── Lifespan ─────────────────────────────────────────────────────────────────
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info(
+        "AnonSkill API started.  Auth0 domain: %s  Audience: %s",
+        settings.auth0_domain,
+        settings.auth0_audience,
+    )
+    yield
+
+
 # ── FastAPI app ───────────────────────────────────────────────────────────────
 
 app = FastAPI(
+    lifespan=lifespan,
     title="AnonSkill API",
     description=(
         "Analyzes a user's private GitHub repositories via Auth0 Token Vault "
@@ -73,12 +87,3 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-# ── Startup log ───────────────────────────────────────────────────────────────
-
-@app.on_event("startup")
-async def on_startup() -> None:
-    logger.info(
-        "AnonSkill API started.  Auth0 domain: %s  Audience: %s",
-        settings.auth0_domain,
-        settings.auth0_audience,
-    )
