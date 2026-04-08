@@ -27,8 +27,8 @@ echo "API URL     : $API_URL"
 
 # Lint
 echo "Running ruff..."
-uv run ruff check ./backend
-uv run ruff format --check ./backend
+(cd backend && uv run ruff check .)
+(cd backend && uv run ruff format --check .)
 
 # Backend
 echo "Building backend..."
