@@ -10,7 +10,6 @@ only for endpoints that PyGithub does not expose.
 """
 
 import logging
-from typing import Optional
 
 import httpx
 from github import Github, GithubException
@@ -23,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 # ── Low-level helpers ─────────────────────────────────────────────────────────
 
+
 def _make_github_client(access_token: str) -> Github:
     """
     Create an authenticated PyGithub client.
@@ -34,6 +34,7 @@ def _make_github_client(access_token: str) -> Github:
 
 
 # ── Repository metadata ───────────────────────────────────────────────────────
+
 
 def _summarize_repo(repo: Repository) -> RepoSummary:
     """
@@ -69,36 +70,36 @@ def _summarize_repo(repo: Repository) -> RepoSummary:
 # ── Skill detection ───────────────────────────────────────────────────────────
 
 _LANGUAGE_SKILL_MAP: dict[str, str] = {
-    "Python":     "Python",
+    "Python": "Python",
     "TypeScript": "TypeScript",
     "JavaScript": "JavaScript",
-    "Go":         "Go",
-    "Rust":       "Rust",
-    "Java":       "Java",
-    "Kotlin":     "Kotlin",
-    "Swift":      "Swift",
-    "C":          "C",
-    "C++":        "C++",
-    "C#":         "C#",
-    "Ruby":       "Ruby",
-    "PHP":        "PHP",
-    "Shell":      "Shell scripting",
+    "Go": "Go",
+    "Rust": "Rust",
+    "Java": "Java",
+    "Kotlin": "Kotlin",
+    "Swift": "Swift",
+    "C": "C",
+    "C++": "C++",
+    "C#": "C#",
+    "Ruby": "Ruby",
+    "PHP": "PHP",
+    "Shell": "Shell scripting",
     "Dockerfile": "Docker",
-    "HCL":        "Terraform / IaC",
-    "Bicep":      "Azure Bicep / IaC",
+    "HCL": "Terraform / IaC",
+    "Bicep": "Azure Bicep / IaC",
 }
 
 _TOPIC_ARCHITECTURE_MAP: dict[str, str] = {
-    "microservices":  "Microservices",
-    "event-driven":   "Event-driven architecture",
-    "serverless":     "Serverless",
-    "rest-api":       "REST API design",
-    "graphql":        "GraphQL",
-    "grpc":           "gRPC",
+    "microservices": "Microservices",
+    "event-driven": "Event-driven architecture",
+    "serverless": "Serverless",
+    "rest-api": "REST API design",
+    "graphql": "GraphQL",
+    "grpc": "gRPC",
     "machine-learning": "Machine Learning",
-    "deep-learning":  "Deep Learning",
-    "llm":            "Large Language Models",
-    "rag":            "Retrieval-Augmented Generation",
+    "deep-learning": "Deep Learning",
+    "llm": "Large Language Models",
+    "rag": "Retrieval-Augmented Generation",
 }
 
 
@@ -126,17 +127,14 @@ def _derive_skills(repos: list[RepoSummary]) -> tuple[list[str], list[str], list
     # Derive architecture patterns from topic tags
     all_topics = {tag.lower() for repo in repos for tag in repo.topic_tags}
     architecture_patterns = list(
-        {
-            pattern
-            for topic_key, pattern in _TOPIC_ARCHITECTURE_MAP.items()
-            if topic_key in all_topics
-        }
+        {pattern for topic_key, pattern in _TOPIC_ARCHITECTURE_MAP.items() if topic_key in all_topics}
     )
 
     return detected_skills, top_languages, architecture_patterns
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
+
 
 async def build_skill_report(github_token: str, max_repos: int = 30) -> SkillReport:
     """

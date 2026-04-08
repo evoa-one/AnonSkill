@@ -1,0 +1,28 @@
+# ── Step 1: First apply ───────────────────────────────────────────────────────
+# Keep initial_deploy = true so Cloud Run uses a placeholder image.
+# Run: terraform init && terraform apply
+# Then get the Cloud Run URLs from the outputs and fill in backend_url/frontend_url below.
+initial_deploy = true
+
+# ── Step 2: After pushing real images ────────────────────────────────────────
+# Run: ./scripts/build-and-push.sh prod
+# Then set initial_deploy = false and run: terraform apply
+
+project_id      = "your-gcp-project-id"
+region          = "us-central1"
+auth0_domain    = "your-tenant.us.auth0.com"
+auth0_audience  = "https://your-api-identifier/api"
+auth0_client_id = "your-auth0-client-id"
+auth0_client_secret = "your-auth0-client-secret"
+gemini_api_key      = "your-gemini-api-key"
+
+# Use raw Cloud Run URLs (custom_domain_enabled = false)
+backend_url  = "https://your-prod-backend-xxxx-uc.a.run.app"
+frontend_url = "https://your-prod-frontend-xxxx-uc.a.run.app"
+
+# Or enable custom domains (requires domain verification in GCP Console first)
+# custom_domain_enabled  = true
+# backend_custom_domain  = "api.example.com"
+# frontend_custom_domain = "example.com"
+# backend_url            = "https://api.example.com"
+# frontend_url           = "https://example.com"

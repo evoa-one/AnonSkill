@@ -14,13 +14,13 @@ Startup order:
 
 import logging
 import sys
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers import agent, oauth
-
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 
@@ -32,9 +32,23 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+# ── Lifespan ─────────────────────────────────────────────────────────────────
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    logger.info(
+        "AnonSkill API started.  Auth0 domain: %s  Audience: %s",
+        settings.auth0_domain,
+        settings.auth0_audience,
+    )
+    yield
+
+
 # ── FastAPI app ───────────────────────────────────────────────────────────────
 
 app = FastAPI(
+    lifespan=lifespan,
     title="AnonSkill API",
     description=(
         "Analyzes a user's private GitHub repositories via Auth0 Token Vault "
@@ -67,18 +81,8 @@ app.include_router(agent.router)
 
 # ── Health probe ──────────────────────────────────────────────────────────────
 
+
 @app.get("/health", tags=["Infra"], summary="Liveness probe")
 def health() -> dict[str, str]:
     """Returns 200 OK as long as the process is running."""
     return {"status": "ok"}
-
-
-# ── Startup log ───────────────────────────────────────────────────────────────
-
-@app.on_event("startup")
-async def on_startup() -> None:
-    logger.info(
-        "AnonSkill API started.  Auth0 domain: %s  Audience: %s",
-        settings.auth0_domain,
-        settings.auth0_audience,
-    )
